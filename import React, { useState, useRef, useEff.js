@@ -1,0 +1,132 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User, Package } from 'lucide-react';
+
+const PatientChatbot = () => {
+  const [messages, setMessages] = useState([
+    { sender: 'bot', text: 'Hello! I am your clinic assistant. Please enter your Order ID or registered Phone Number to check your shipment status.' }
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll to the newest message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userQuery = input.trim();
+    
+    // 1. Add user's message to chat
+    setMessages(prev => [...prev, { sender: 'user', text: userQuery }]);
+    setInput('');
+    setIsTyping(true);
+
+    // 2. Simulate querying the database (Replace with real API call later)
+    setTimeout(() => {
+      /* 
+       * IN PRODUCTION: 
+       * const response = await fetch(`/api/track?id=${userQuery}`);
+       * const data = await response.json();
+       * const botReply = `Your order status is: ${data.status}`;
+       */
+      
+      let botReply = '';
+      if (userQuery.length > 4) {
+        botReply = `Good news! Order #${userQuery} is currently marked as **Shipped**. It should arrive in 1-2 business days.`;
+      } else {
+        botReply = "I couldn't find an order with that ID. Please ensure it is at least 5 characters long and try again.";
+      }
+
+      setMessages(prev => [...prev, { sender: 'bot', text: botReply }]);
+      setIsTyping(false);
+    }, 1500); // Artificial delay to feel like a real bot typing
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[80vh]">
+        
+        {/* Header */}
+        <div className="bg-blue-600 p-4 text-white flex items-center shadow-md z-10">
+          <div className="bg-white p-2 rounded-full mr-3">
+            <Package className="w-6 h-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="font-bold text-lg">Clinic Tracker Bot</h1>
+            <p className="text-blue-100 text-xs flex items-center">
+              <span className="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+              Online
+            </p>
+          </div>
+        </div>
+
+        {/* Chat History */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          {messages.map((msg, index) => (
+            <div 
+              key={index} 
+              className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`flex max-w-[80%] ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                
+                {/* Avatar */}
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${msg.sender === 'user' ? 'bg-blue-100 ml-2' : 'bg-gray-200 mr-2'}`}>
+                  {msg.sender === 'user' ? <User className="w-5 h-5 text-blue-600" /> : <Bot className="w-5 h-5 text-gray-600" />}
+                </div>
+
+                {/* Message Bubble */}
+                <div className={`p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none shadow-sm'}`}>
+                  {msg.text}
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex justify-start">
+              <div className="flex flex-row max-w-[80%]">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 mr-2 flex items-center justify-center">
+                   <Bot className="w-5 h-5 text-gray-600" />
+                </div>
+                <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-tl-none shadow-sm flex space-x-1">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <form onSubmit={handleSend} className="p-4 bg-white border-t">
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Enter Order ID..."
+              className="flex-1 bg-gray-100 border-transparent focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-full px-4 py-3 outline-none transition"
+            />
+            <button
+              type="submit"
+              disabled={!input.trim() || isTyping}
+              className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
+            >
+              <Send className="w-5 h-5 ml-1" />
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  );
+};
+
+export default PatientChatbot;
